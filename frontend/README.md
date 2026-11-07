@@ -1,32 +1,91 @@
-# React + TypeScript + Vite
+# Frontend — Astro Natal AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+SPA de astrología construida con Vite, React y TypeScript.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Vite 8
+- React 19
+- TypeScript 7
+- React Router
+- pnpm
 
-## React Compiler
+## Requisitos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js 24+
+- pnpm
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```powershell
+npm.cmd install -g pnpm
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Instalación
+
+```powershell
+cd frontend
+pnpm install
+```
+
+## Variables de entorno
+
+Copia el ejemplo:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+```properties
+VITE_API_URL=http://localhost:8080
+```
+
+Vite solo expone variables con prefijo `VITE_`. No pongas secretos en variables `VITE_`: terminan en el bundle público.
+
+`.env` está ignorado por git; `.env.example` sí se versiona.
+
+## Scripts
+
+```powershell
+pnpm dev       # servidor de desarrollo
+pnpm build     # build de producción
+pnpm preview   # previsualizar build
+pnpm lint      # oxlint
+```
+
+## Estructura
+
+```text
+frontend/
+├── public/
+├── src/
+│   ├── assets/
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
+├── .env.example
+├── index.html
+├── package.json
+├── pnpm-lock.yaml
+└── vite.config.ts
+```
+
+## Estado
+
+Scaffold inicial. Pendiente:
+
+- Rutas de login/registro y guard de sesión.
+- Cliente HTTP con JWT.
+- Onboarding de datos de nacimiento.
+- Carta natal, tránsitos y lecturas.
+- Tests de componentes y flujos.
+
+El frontend consumirá la API del backend en `/api`. El backend se construye primero; las contrataciones de pantallas se harán cuando los endpoints estén estables.
+
+## Backend local
+
+```powershell
+cd backend
+docker compose -f docker-compose.db.yml up -d
+.\run-dev.cmd
+```
+
+API: `http://localhost:8080`

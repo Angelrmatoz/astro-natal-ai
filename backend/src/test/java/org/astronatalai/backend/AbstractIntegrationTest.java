@@ -14,8 +14,7 @@ import org.springframework.context.annotation.Import;
         "DB_PORT=5432",
         "POSTGRES_DB=test",
         "POSTGRES_USER=test",
-        "POSTGRES_PASSWORD=test",
-        "BACKEND_PORT=0"
+        "POSTGRES_PASSWORD=test"
 })
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)

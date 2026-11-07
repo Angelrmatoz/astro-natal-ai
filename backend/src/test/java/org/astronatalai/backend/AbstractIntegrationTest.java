@@ -3,7 +3,9 @@ package org.astronatalai.backend;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
+@ActiveProfiles("dev")
 @SpringBootTest(properties = {
         "app.jwt.secret=test-only-secret-with-at-least-32-bytes",
         "app.jwt.ttl=PT24H",

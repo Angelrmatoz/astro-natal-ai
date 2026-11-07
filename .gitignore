@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+.infisical.yaml
+.infisical.json
 
 # Java / Maven
 backend/target/

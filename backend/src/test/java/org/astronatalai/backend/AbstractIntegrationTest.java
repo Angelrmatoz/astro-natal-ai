@@ -12,6 +12,7 @@ import org.springframework.test.context.ActiveProfiles;
         "app.jwt.issuer=astro-natal-ai",
         "app.geocoding.url=https://geo.test",
         "app.astro-engine.url=https://engine.test",
+        "app.cors.allowed-origins=http://localhost:5173",
         "app.ai.api-key=test-key",
         "app.ai.model=test-model",
         "app.ai.fallback-model=test-fallback-model",

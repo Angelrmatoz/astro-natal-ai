@@ -66,6 +66,7 @@ Los perfiles `application-dev.properties` y `application-prod.properties` solo c
 | `GOOGLE_AI_MODEL` | Modelo principal: `gemma-4-31b-it` |
 | `GOOGLE_AI_FALLBACK_MODEL` | Fallback: `gemma-4-26b-a4b-it` |
 | `GOOGLE_AI_TIMEOUT_SECONDS` | Timeout de la llamada a IA |
+| `CORS_ALLOWED_ORIGINS` | Origen permitido del frontend |
 
 `.env.example` contiene todas las claves con valores de ejemplo. El `.env` real no se versiona.
 
@@ -122,10 +123,29 @@ También puedes ejecutar `BackendApplication` desde IntelliJ con perfil `dev` y 
 
 Los errores usan `application/problem+json` (`ProblemDetail`).
 
+## Smoke manual
+
+Con el backend arriba:
+
+```powershell
+curl.exe -s http://localhost:8080/actuator/health/liveness
+
+$body = '{"email":"smoke@example.com","password":"secret123","nombre":"Smoke"}'
+$register = curl.exe -s -X POST http://localhost:8080/api/auth/register -H "Content-Type: application/json" -d $body
+$token = (ConvertFrom-Json $register).token
+
+curl.exe -s http://localhost:8080/api/charts/me -H "Authorization: Bearer $token"
+```
+
+- Registro, login y endpoints protegidos funcionan sin `astro-engine`.
+- Carta, tránsitos y lecturas devuelven `503` hasta que el engine esté disponible.
+- `/actuator/health` incluye el engine; si está apagado puede dar `DOWN`. Para comprobar el proceso usa `/actuator/health/liveness`.
+
 ## Estado
 
-- Autenticación, carta natal, tránsitos y lecturas IA implementados.
-- Endurecimiento pendiente.
+- Autenticación, carta natal, tránsitos, lecturas IA, CORS y health del engine implementados.
+- Endurecimiento completado.
 - `astro-engine` pendiente: los endpoints que dependen de él devuelven `503` hasta que exista.
 - Las cartas y los tránsitos se prueban contra fixtures; falta el golden test del motor real.
 - Las lecturas usan Gemma 4 con modelo principal `gemma-4-31b-it` y fallback `gemma-4-26b-a4b-it`; los tests mockean la IA.
+- Mientras `astro-engine` no esté arriba, `/actuator/health` puede reportar `DOWN`; `/actuator/health/liveness` sigue disponible.

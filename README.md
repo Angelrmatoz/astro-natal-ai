@@ -8,7 +8,7 @@ El proyecto se construye primero el backend, con contratos estables y tests, y d
 
 - Backend: autenticación JWT, carta natal, tránsitos, lecturas IA y persistencia en PostgreSQL.
 - Frontend: scaffold de Vite + React + TypeScript.
-- Pendiente: endurecimiento, UX del frontend y despliegue.
+- Pendiente: frontend funcional, `astro-engine` y despliegue.
 - `astro-engine` todavía no existe; los endpoints de carta y tránsitos responden `503` hasta que esté disponible.
 
 ## Stack
@@ -65,6 +65,7 @@ Los `.env` reales están ignorados por git.
 | `GOOGLE_AI_MODEL` | Modelo principal, `gemma-4-31b-it` |
 | `GOOGLE_AI_FALLBACK_MODEL` | Fallback, `gemma-4-26b-a4b-it` |
 | `GOOGLE_AI_TIMEOUT_SECONDS` | Timeout de la llamada a IA |
+| `CORS_ALLOWED_ORIGINS` | Origen permitido del frontend, separado por comas |
 
 `application.properties` es el archivo central. Los perfiles `dev` y `prod` solo contienen overrides; los valores vienen de `.env`, Infisical o variables de IntelliJ. `server.port=8080` está fijado en el central.
 

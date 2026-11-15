@@ -15,8 +15,8 @@ El backend se construye primero; el frontend consume contratos estables.
 
 ## Estado
 
-- Implementado: autenticación JWT, carta natal, tránsitos, lecturas IA y persistencia.
-- Pendiente: endurecimiento, frontend funcional, `astro-engine`.
+- Implementado: autenticación JWT, carta natal, tránsitos, lecturas IA, CORS, health del engine y persistencia.
+- Pendiente: frontend funcional, `astro-engine` y despliegue.
 - `astro-engine` no existe todavía: los endpoints que dependen de él devuelven `503`.
 
 ## Estructura
@@ -115,8 +115,7 @@ No poner lógica de negocio en controllers ni acceso a datos en services.
 ## Pendientes
 
 1. `astro-engine` + golden test contra astro.com (<1°).
-2. Endurecimiento del backend.
-3. Frontend: login, onboarding, carta, tránsitos y lecturas.
-4. Despliegue.
+2. Frontend: login, onboarding, carta, tránsitos y lecturas.
+3. Despliegue.
 
 No implementar funcionalidad del frontend antes de estabilizar los contratos del backend.

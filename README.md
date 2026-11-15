@@ -6,9 +6,9 @@ El proyecto se construye primero el backend, con contratos estables y tests, y d
 
 ## Estado
 
-- Backend: autenticación JWT, carta natal, tránsitos y persistencia en PostgreSQL.
+- Backend: autenticación JWT, carta natal, tránsitos, lecturas IA y persistencia en PostgreSQL.
 - Frontend: scaffold de Vite + React + TypeScript.
-- Pendiente: lecturas con Gemma 4, endurecimiento, UX del frontend y despliegue.
+- Pendiente: endurecimiento, UX del frontend y despliegue.
 - `astro-engine` todavía no existe; los endpoints de carta y tránsitos responden `503` hasta que esté disponible.
 
 ## Stack
@@ -61,6 +61,10 @@ Los `.env` reales están ignorados por git.
 | `JWT_ISSUER` | Emisor del token |
 | `GEOCODING_URL` | Base de Open-Meteo Geocoding |
 | `ASTRO_ENGINE_URL` | URL interna del motor astrológico |
+| `GOOGLE_AI_API_KEY` | API key de Google AI Studio |
+| `GOOGLE_AI_MODEL` | Modelo principal, `gemma-4-31b-it` |
+| `GOOGLE_AI_FALLBACK_MODEL` | Fallback, `gemma-4-26b-a4b-it` |
+| `GOOGLE_AI_TIMEOUT_SECONDS` | Timeout de la llamada a IA |
 
 `application.properties` es el archivo central. Los perfiles `dev` y `prod` solo contienen overrides; los valores vienen de `.env`, Infisical o variables de IntelliJ. `server.port=8080` está fijado en el central.
 
@@ -124,6 +128,7 @@ Incluye tests unitarios y de integración con Testcontainers. Docker Desktop deb
 | `POST` | `/api/charts` | Crear/actualizar carta natal |
 | `GET` | `/api/charts/me` | Carta del usuario |
 | `GET` | `/api/transits/current` | Tránsitos actuales |
+| `POST` | `/api/readings` | Lectura IA diaria/semanal/mensual |
 | `GET` | `/actuator/health` | Healthcheck |
 
 ## CI y ramas

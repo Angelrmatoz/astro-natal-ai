@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface BirthChartRepository extends JpaRepository<BirthChart, UUID> {
 
     Optional<BirthChart> findByUserId(UUID userId);
+
+    Optional<BirthChart> findByIdAndUser_Id(UUID id, UUID userId);
 }

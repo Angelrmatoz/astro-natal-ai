@@ -25,11 +25,11 @@ controller → service → repository → PostgreSQL
 ```text
 src/main/java/org/astronatalai/backend/
 ├── controller/   AuthController, ChartController, TransitController
-├── service/      AuthService, ChartService, TransitService, JwtService
-├── repository/   UserRepository, BirthChartRepository
-├── entity/       User, BirthChart
+├── service/      AuthService, ChartService, TransitService, ReadingService, PromptBuilder, JwtService
+├── repository/   UserRepository, BirthChartRepository, ReadingRepository
+├── entity/       User, BirthChart, Reading
 ├── dto/          Requests, responses y comandos internos
-├── client/       GeocodingClient, AstroEngineClient
+├── client/       GeocodingClient, AstroEngineClient, GemmaClient
 ├── config/       SecurityConfig, RestClientConfig, ClockConfig
 ├── security/     Entry point y access denied handler
 ├── exception/    Excepciones y ApiExceptionHandler
@@ -62,6 +62,10 @@ Los perfiles `application-dev.properties` y `application-prod.properties` solo c
 | `JWT_ISSUER` | Emisor del JWT |
 | `GEOCODING_URL` | Base de Open-Meteo |
 | `ASTRO_ENGINE_URL` | URL interna del motor |
+| `GOOGLE_AI_API_KEY` | API key de Google AI Studio |
+| `GOOGLE_AI_MODEL` | Modelo principal: `gemma-4-31b-it` |
+| `GOOGLE_AI_FALLBACK_MODEL` | Fallback: `gemma-4-26b-a4b-it` |
+| `GOOGLE_AI_TIMEOUT_SECONDS` | Timeout de la llamada a IA |
 
 `.env.example` contiene todas las claves con valores de ejemplo. El `.env` real no se versiona.
 
@@ -113,13 +117,15 @@ También puedes ejecutar `BackendApplication` desde IntelliJ con perfil `dev` y 
 | `POST` | `/api/charts` | Crear o actualizar la carta |
 | `GET` | `/api/charts/me` | Carta del usuario autenticado |
 | `GET` | `/api/transits/current` | Tránsitos actuales |
+| `POST` | `/api/readings` | Lectura IA diaria/semanal/mensual |
 | `GET` | `/actuator/health` | Healthcheck |
 
 Los errores usan `application/problem+json` (`ProblemDetail`).
 
 ## Estado
 
-- Autenticación, carta natal y tránsitos implementados.
-- Lecturas IA y endurecimiento pendientes.
+- Autenticación, carta natal, tránsitos y lecturas IA implementados.
+- Endurecimiento pendiente.
 - `astro-engine` pendiente: los endpoints que dependen de él devuelven `503` hasta que exista.
 - Las cartas y los tránsitos se prueban contra fixtures; falta el golden test del motor real.
+- Las lecturas usan Gemma 4 con modelo principal `gemma-4-31b-it` y fallback `gemma-4-26b-a4b-it`; los tests mockean la IA.

@@ -55,6 +55,18 @@ pnpm test      # Jest + Testing Library
 pnpm test:e2e  # Playwright (Chromium y WebKit)
 ```
 
+## Pruebas
+
+- **Unitarias** (`pnpm test`): Jest con transform de SWC sobre jsdom. Cubren formato de posiciones, guard de sesión, login con error y formulario de nacimiento.
+- **E2E** (`pnpm test:e2e`): Playwright con Chromium y WebKit. Interceptan `/api/**`, así que no necesitan backend ni base de datos.
+- La primera vez, instala los navegadores:
+
+```powershell
+pnpm exec playwright install chromium webkit
+```
+
+Los artefactos de Playwright (`test-results/`, `playwright-report/`) están ignorados por git.
+
 ## Estructura
 
 ```text
@@ -98,12 +110,12 @@ F1–F6 completados: rutas y guard de sesión, registro con datos de nacimiento,
 - Despliegue del frontend (F7).
 - CORS y variables de producción.
 
-El frontend consume la API del backend en `/api`; el backend se construye primero.
+El frontend consume la API del backend en `/api`; los contratos están estables desde F1.
 
 ## Backend local
 
 ```powershell
-cd backend
+cd ..\backend
 docker compose -f docker-compose.db.yml up -d
 .\run-dev.cmd
 ```

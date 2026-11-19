@@ -132,11 +132,11 @@ No poner lógica de negocio en controllers ni acceso a datos en services.
 - No exponer entidades directamente en controllers.
 - No imprimir secretos en logs, tests ni respuestas.
 - Documentación humana en los `README.md`; este archivo es para agentes.
+- `PLAN.md` y `CONTEXT.md` son documentos locales: están en `.gitignore` y no se versionan.
+- `AGENTS.md` sí se versiona: es el contrato operativo del repositorio.
 
 ## Pendientes
 
-1. Frontend F4–F7: tránsitos, lecturas periódicas, UX y despliegue.
-2. Despliegue: Dockerfiles de backend, motor y frontend; workflow de deploy.
-3. Prueba end-to-end real: backend + motor + PostgreSQL + Gemma en el mismo flujo.
-
-No implementar funcionalidad del frontend antes de estabilizar los contratos del backend.
+1. F7: despliegue. Dockerfiles de backend y motor, build del frontend y variables de producción.
+2. Elegir proveedor antes de desplegar (Vercel solo para el frontend; backend y motor en Render/Railway/Fly o VPS).
+3. No desplegar ni crear recursos en la nube sin confirmación explícita.

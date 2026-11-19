@@ -29,4 +29,6 @@ Thumbs.db
 # Logs
 *.log
 
+# Documentacion local (no se versiona)
 PLAN.md
+CONTEXT.md

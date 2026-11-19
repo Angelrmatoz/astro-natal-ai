@@ -24,13 +24,13 @@ controller → service → repository → PostgreSQL
 
 ```text
 src/main/java/org/astronatalai/backend/
-├── controller/   AuthController, ChartController, TransitController
-├── service/      AuthService, ChartService, TransitService, ReadingService, PromptBuilder, JwtService
+├── controller/   AuthController, UserController, ChartController, TransitController, ReadingController
+├── service/      AuthService, UserService, ChartService, TransitService, ReadingService, ReadingType, PromptBuilder, JwtService
 ├── repository/   UserRepository, BirthChartRepository, ReadingRepository
 ├── entity/       User, BirthChart, Reading
 ├── dto/          Requests, responses y comandos internos
 ├── client/       GeocodingClient, AstroEngineClient, GemmaClient
-├── config/       SecurityConfig, RestClientConfig, ClockConfig
+├── config/       SecurityConfig, CorsConfig, RestClientConfig, ClockConfig, EngineHealthIndicator
 ├── security/     Entry point y access denied handler
 ├── exception/    Excepciones y ApiExceptionHandler
 └── BackendApplication
@@ -68,7 +68,7 @@ Los valores reales vienen de:
 | `GOOGLE_AI_API_KEY` | API key de Google AI Studio |
 | `GOOGLE_AI_MODEL` | Modelo principal: `gemma-4-31b-it` |
 | `GOOGLE_AI_FALLBACK_MODEL` | Fallback: `gemma-4-26b-a4b-it` |
-| `GOOGLE_AI_TIMEOUT_SECONDS` | Timeout de la llamada a IA |
+| `GOOGLE_AI_TIMEOUT_SECONDS` | Timeout de la llamada a IA, en segundos (300) |
 | `CORS_ALLOWED_ORIGINS` | Origen permitido del frontend |
 
 `.env.example` contiene todas las claves con valores de ejemplo. El `.env` real no se versiona.
@@ -118,10 +118,11 @@ También puedes ejecutar `BackendApplication` desde IntelliJ con perfil `dev` y 
 |---|---|---|
 | `POST` | `/api/auth/register` | Registro y token |
 | `POST` | `/api/auth/login` | Login y token |
+| `PATCH` | `/api/users/me` | Actualizar el nombre del perfil |
 | `POST` | `/api/charts` | Crear o actualizar la carta |
 | `GET` | `/api/charts/me` | Carta del usuario autenticado |
 | `GET` | `/api/transits/current` | Tránsitos actuales |
-| `POST` | `/api/readings` | Lectura IA diaria/semanal/mensual |
+| `POST` | `/api/readings` | Lectura IA: `day`, `week`, `month` o `natal` |
 | `GET` | `/actuator/health` | Healthcheck |
 
 Los errores usan `application/problem+json` (`ProblemDetail`).

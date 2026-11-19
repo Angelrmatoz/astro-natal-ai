@@ -13,6 +13,9 @@ backend/target/
 frontend/node_modules/
 frontend/dist/
 frontend/.oxlintcache
+frontend/test-results/
+frontend/playwright-report/
+astro-engine/node_modules/
 
 # IDE
 .idea/

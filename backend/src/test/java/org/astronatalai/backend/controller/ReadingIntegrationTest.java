@@ -68,6 +68,32 @@ class ReadingIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void generatesNatalReadingWithoutTransitsAndReturnsStoredVersion() throws Exception {
+        String token = register(uniqueEmail());
+        String chartId = createChart(token);
+        when(gemmaClient.generate(anyString()))
+                .thenReturn(new GemmaClient.GeneratedText("Carta interpretada", "gemma-4-31b-it"));
+
+        MvcResult first = postReading(token, chartId, "natal")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tipo").value("natal"))
+                .andExpect(jsonPath("$.contenidoTexto").value("Carta interpretada"))
+                .andExpect(jsonPath("$.rangoInicio").value("1990-05-01"))
+                .andReturn();
+
+        String firstId = JsonPath.read(first.getResponse().getContentAsString(), "$.id");
+
+        MvcResult second = postReading(token, chartId, "natal")
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertThat(JsonPath.<String>read(second.getResponse().getContentAsString(), "$.id"))
+                .isEqualTo(firstId);
+        verify(gemmaClient, times(1)).generate(anyString());
+        verify(astroEngineClient, times(0)).transits(any(), any());
+    }
+
+    @Test
     void createsDifferentReadingsForDifferentPeriods() throws Exception {
         String token = register(uniqueEmail());
         String chartId = createChart(token);

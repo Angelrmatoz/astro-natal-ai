@@ -35,7 +35,8 @@ public class ReadingService {
                 .orElseThrow(ChartNotFoundException::new);
 
         LocalDate today = LocalDate.now(clock);
-        ReadingType.Range range = type.range(today);
+        LocalDate rangeDate = type == ReadingType.NATAL ? chart.getFechaNac() : today;
+        ReadingType.Range range = type.range(rangeDate);
 
         Optional<Reading> existing = readingRepository
                 .findByChartIdAndTipoAndRangoInicio(chart.getId(), type.value(), range.start());
@@ -43,16 +44,19 @@ public class ReadingService {
             return ReadingResponse.from(existing.get());
         }
 
-        JsonNode transits = astroEngineClient.transits(chart.getDatosCarta(), today);
+        JsonNode transits = type == ReadingType.NATAL
+                ? null
+                : astroEngineClient.transits(chart.getDatosCarta(), today);
         String prompt = promptBuilder.build(chart, transits, type, range);
         GemmaClient.GeneratedText generated = gemmaClient.generate(prompt);
 
+        JsonNode snapshot = transits == null ? chart.getDatosCarta() : transits;
         Reading reading = new Reading(
                 chart,
                 type.value(),
                 range.start(),
                 range.end(),
-                transits,
+                snapshot,
                 generated.text(),
                 generated.model());
 

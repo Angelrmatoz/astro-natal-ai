@@ -10,6 +10,6 @@ public record CreateReadingRequest(
         @NotNull UUID chartId,
         @NotBlank
         @Size(max = 10)
-        @Pattern(regexp = "day|week|month", message = "type debe ser day, week o month")
+        @Pattern(regexp = "day|week|month|natal", message = "type debe ser day, week, month o natal")
         String type) {
 }

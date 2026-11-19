@@ -38,4 +38,8 @@ public class User {
         this.passwordHash = passwordHash;
         this.nombre = nombre;
     }
+
+    public void rename(String nombre) {
+        this.nombre = nombre;
+    }
 }

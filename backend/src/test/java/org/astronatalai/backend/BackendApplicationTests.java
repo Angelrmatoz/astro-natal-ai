@@ -22,7 +22,9 @@ class BackendApplicationTests extends AbstractIntegrationTest {
     void flywayAppliedAndTablesExist() {
         Integer migrations = jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class);
-        assertThat(migrations).isEqualTo(1);
+        Integer applied = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM flyway_schema_history", Integer.class);
+        assertThat(migrations).isPositive().isEqualTo(applied);
 
         Integer tables = jdbcTemplate.queryForObject("""
                 SELECT count(*) FROM information_schema.tables

@@ -1,0 +1,71 @@
+{
+  "source": "NASA/JPL Horizons API (DE441), geocentric apparent ecliptic longitude of date",
+  "query": "COMMAND='<cuerpo>' CENTER='500@399' QUANTITIES='31' EPHEM_TYPE='OBSERVER'",
+  "retrieved": "2026-11-17",
+  "targets": {
+    "Sol": "10",
+    "Luna": "301",
+    "Mercurio": "199",
+    "Venus": "299",
+    "Marte": "499",
+    "Júpiter": "599",
+    "Saturno": "699",
+    "Urano": "799",
+    "Neptuno": "899",
+    "Plutón": "999"
+  },
+  "toleranceDegrees": 0.01,
+  "cases": [
+    {
+      "instant": "1990-05-15T18:30:00Z",
+      "lat": 18.4861,
+      "lng": -69.9312,
+      "longitudes": {
+        "Sol": 54.6572247,
+        "Luna": 300.5166914,
+        "Mercurio": 37.9826213,
+        "Venus": 13.1272837,
+        "Marte": 348.5349755,
+        "Júpiter": 99.5930171,
+        "Saturno": 295.2447647,
+        "Urano": 279.1771804,
+        "Neptuno": 284.3488644,
+        "Plutón": 226.1598841
+      }
+    },
+    {
+      "instant": "2024-03-20T00:00:00Z",
+      "lat": 40.4168,
+      "lng": -3.7038,
+      "longitudes": {
+        "Sol": 359.8713785,
+        "Luna": 122.2517701,
+        "Mercurio": 17.2524459,
+        "Venus": 340.011494,
+        "Marte": 327.672918,
+        "Júpiter": 44.859689,
+        "Saturno": 342.2101329,
+        "Urano": 50.2484079,
+        "Neptuno": 357.4553803,
+        "Plutón": 301.6581015
+      }
+    },
+    {
+      "instant": "1950-11-02T06:00:00Z",
+      "lat": -33.4489,
+      "lng": -70.6693,
+      "longitudes": {
+        "Sol": 219.2456762,
+        "Luna": 120.188975,
+        "Mercurio": 219.5808002,
+        "Venus": 216.2939719,
+        "Marte": 266.9882851,
+        "Júpiter": 327.7243877,
+        "Saturno": 178.2487676,
+        "Urano": 99.3582579,
+        "Neptuno": 197.9084549,
+        "Plutón": 139.7701159
+      }
+    }
+  ]
+}

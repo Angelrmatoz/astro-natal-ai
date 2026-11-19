@@ -8,6 +8,8 @@ SPA de astrología construida con Vite, React y TypeScript.
 - React 19
 - TypeScript 7
 - React Router
+- Jest + React Testing Library
+- Playwright (Chromium y WebKit)
 - pnpm
 
 ## Requisitos
@@ -49,36 +51,54 @@ pnpm dev       # servidor de desarrollo
 pnpm build     # build de producción
 pnpm preview   # previsualizar build
 pnpm lint      # oxlint
+pnpm test      # Jest + Testing Library
+pnpm test:e2e  # Playwright (Chromium y WebKit)
 ```
 
 ## Estructura
 
 ```text
 frontend/
+├── e2e/              pruebas Playwright
 ├── public/
 ├── src/
-│   ├── assets/
+│   ├── api/          cliente fetch y tipos de la API
+│   ├── assets/fonts/ Instrument Serif (OFL)
+│   ├── auth/         sesión, contexto y guard de rutas
+│   ├── chart/        hook de la carta del usuario
+│   ├── components/   layout, shell de autenticación y dial
+│   ├── forms/        utilidades de formularios y validación
+│   ├── lib/          formato de fechas, horas y posiciones
+│   ├── pages/        login, registro, onboarding, carta, tránsitos, lecturas y perfil
 │   ├── App.tsx
 │   ├── main.tsx
 │   └── index.css
 ├── .env.example
 ├── index.html
+├── jest.config.cjs
 ├── package.json
+├── playwright.config.ts
 ├── pnpm-lock.yaml
 └── vite.config.ts
 ```
 
+## Diseño
+
+- Modo de producto: **Operate**. Prioriza legibilidad, jerarquía y estados reales sobre decoración.
+- Tipografía: Instrument Serif (autoalojada, licencia OFL en `src/assets/fonts/OFL.txt`) para títulos; pila del sistema para texto.
+- Paleta en `src/index.css`: tinta fría de fondo, latón como único acento, tema claro y oscuro por `prefers-color-scheme`.
+- Sin librería de UI ni CSS. Tokens semánticos, bordes de 1 px, sin sombras.
+- Formularios con validación nativa y `:user-invalid`: el error no aparece hasta que el usuario interactúa. `aria-invalid` se sincroniza desde `AuthShell`.
+- Movimiento: una sola animación, el arco del dial; se desactiva con `prefers-reduced-motion`.
+
 ## Estado
 
-Scaffold inicial. Pendiente:
+F1–F6 completados: rutas y guard de sesión, registro con datos de nacimiento, carta natal con lectura integral, tránsitos, lecturas diaria/semanal/mensual, perfil editable y pruebas unitarias/E2E. Pendiente:
 
-- Rutas de login/registro y guard de sesión.
-- Cliente HTTP con JWT.
-- Onboarding de datos de nacimiento.
-- Carta natal, tránsitos y lecturas.
-- Tests de componentes y flujos.
+- Despliegue del frontend (F7).
+- CORS y variables de producción.
 
-El frontend consumirá la API del backend en `/api`. El backend se construye primero; las contrataciones de pantallas se harán cuando los endpoints estén estables.
+El frontend consume la API del backend en `/api`; el backend se construye primero.
 
 ## Backend local
 

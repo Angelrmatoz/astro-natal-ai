@@ -14,6 +14,11 @@ class GemmaClientTest {
     private static final String FALLBACK = "gemma-4-26b-a4b-it";
 
     @Test
+    void convertsTimeoutSecondsToMilliseconds() {
+        assertThat(GemmaClient.timeoutMillis(60)).isEqualTo(60_000);
+    }
+
+    @Test
     void usesPrimaryModelWhenItWorks() {
         List<String> calls = new ArrayList<>();
         GemmaClient client = new GemmaClient((model, prompt) -> {

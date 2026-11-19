@@ -9,7 +9,8 @@ import org.astronatalai.backend.exception.InvalidReadingRequestException;
 public enum ReadingType {
     DAY("day"),
     WEEK("week"),
-    MONTH("month");
+    MONTH("month"),
+    NATAL("natal");
 
     private final String value;
 
@@ -26,14 +27,15 @@ public enum ReadingType {
             case "day" -> DAY;
             case "week" -> WEEK;
             case "month" -> MONTH;
+            case "natal" -> NATAL;
             default -> throw new InvalidReadingRequestException(
-                    "type debe ser day, week o month");
+                    "type debe ser day, week, month o natal");
         };
     }
 
     public Range range(LocalDate date) {
         return switch (this) {
-            case DAY -> new Range(date, date);
+            case DAY, NATAL -> new Range(date, date);
             case WEEK -> {
                 LocalDate start = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
                 yield new Range(start, start.plusDays(6));

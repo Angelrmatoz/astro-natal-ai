@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -104,6 +105,36 @@ class ReadingServiceTest {
         verify(readingRepository).saveAndFlush(saved.capture());
         assertThat(saved.getValue().getTransitosSnapshot()).isEqualTo(transitData);
         assertThat(saved.getValue().getModelo()).isEqualTo("gemma-4-31b-it");
+    }
+
+    @Test
+    void generatesNatalReadingWithoutCallingEngine() {
+        LocalDate birthDate = LocalDate.of(1990, 5, 1);
+        when(chart.getId()).thenReturn(CHART_ID);
+        when(chart.getFechaNac()).thenReturn(birthDate);
+        when(chart.getDatosCarta()).thenReturn(chartData);
+        when(birthChartRepository.findByIdAndUser_Id(CHART_ID, USER_ID))
+                .thenReturn(Optional.of(chart));
+        when(readingRepository.findByChartIdAndTipoAndRangoInicio(
+                CHART_ID, "natal", birthDate)).thenReturn(Optional.empty());
+        when(promptBuilder.build(eq(chart), isNull(), eq(ReadingType.NATAL), any()))
+                .thenReturn("prompt natal");
+        when(gemmaClient.generate("prompt natal"))
+                .thenReturn(new GemmaClient.GeneratedText("carta interpretada", "gemma-4-31b-it"));
+        when(readingRepository.saveAndFlush(any(Reading.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ReadingResponse response = readingService.generate(
+                USER_ID, new CreateReadingRequest(CHART_ID, "natal"));
+
+        assertThat(response.tipo()).isEqualTo("natal");
+        assertThat(response.rangoInicio()).isEqualTo(birthDate);
+        assertThat(response.rangoFin()).isEqualTo(birthDate);
+        verifyNoInteractions(astroEngineClient);
+
+        ArgumentCaptor<Reading> saved = ArgumentCaptor.forClass(Reading.class);
+        verify(readingRepository).saveAndFlush(saved.capture());
+        assertThat(saved.getValue().getTransitosSnapshot()).isEqualTo(chartData);
     }
 
     @Test

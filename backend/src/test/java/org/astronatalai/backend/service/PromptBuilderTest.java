@@ -44,4 +44,34 @@ class PromptBuilderTest {
                 .contains("day", "2026-11-14")
                 .contains("consejo médico, financiero ni legal");
     }
+
+    @Test
+    void buildsNatalPromptWithSectionsAndTimeCaveat() {
+        JsonNode chartData = JsonMapper.builder().build().readTree("""
+                {"ascendant": null, "planets": [{"name": "Sol", "sign": "Tauro"}]}
+                """);
+        BirthChart chart = new BirthChart(new User("ana@example.com", "hash", "Ana"));
+        chart.update(
+                "Carta",
+                LocalDate.of(1990, 5, 1),
+                null,
+                false,
+                "Santo Domingo",
+                18.47186,
+                -69.89232,
+                "America/Santo_Domingo",
+                chartData);
+
+        String prompt = promptBuilder.build(
+                chart, null, ReadingType.NATAL, ReadingType.NATAL.range(LocalDate.of(1990, 5, 1)));
+
+        assertThat(prompt)
+                .contains("carta natal completa")
+                .contains("Sol", "Tauro")
+                .contains("conjunciones", "oposiciones", "orbe")
+                .contains("hora de nacimiento es desconocida")
+                .contains("600-900 palabras")
+                .contains("No uses Markdown")
+                .contains("consejo médico, financiero ni legal");
+    }
 }

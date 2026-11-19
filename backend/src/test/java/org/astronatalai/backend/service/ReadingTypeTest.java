@@ -34,9 +34,18 @@ class ReadingTypeTest {
     }
 
     @Test
+    void buildsNatalRangeOnBirthDate() {
+        ReadingType.Range range = ReadingType.NATAL.range(LocalDate.of(1990, 5, 1));
+
+        assertThat(range.start()).isEqualTo(LocalDate.of(1990, 5, 1));
+        assertThat(range.end()).isEqualTo(LocalDate.of(1990, 5, 1));
+    }
+
+    @Test
     void parsesCaseInsensitiveTypes() {
         assertThat(ReadingType.from("DAY")).isEqualTo(ReadingType.DAY);
         assertThat(ReadingType.from("week")).isEqualTo(ReadingType.WEEK);
+        assertThat(ReadingType.from("Natal")).isEqualTo(ReadingType.NATAL);
     }
 
     @Test

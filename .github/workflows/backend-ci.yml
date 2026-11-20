@@ -1,4 +1,4 @@
-name: Backend CI
+name: CI
 
 on:
   pull_request:
@@ -27,3 +27,61 @@ jobs:
       - name: Run backend tests
         working-directory: backend
         run: ./mvnw --batch-mode test
+
+  engine-tests:
+    name: engine-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: astro-engine/pnpm-lock.yaml
+
+      - name: Install
+        working-directory: astro-engine
+        run: pnpm install --frozen-lockfile
+
+      - name: Run engine tests
+        working-directory: astro-engine
+        run: pnpm test
+
+  frontend-tests:
+    name: frontend-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        working-directory: frontend
+        run: pnpm test
+
+      - name: Type-check and build
+        working-directory: frontend
+        run: pnpm build

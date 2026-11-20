@@ -1,0 +1,15 @@
+{
+  "name": "astro-engine",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@12.16.1",
+  "description": "Sidecar de calculo astrologico para Astro Natal AI",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19"
+  }
+}

@@ -41,6 +41,18 @@ public class AstroEngineClient {
         return postForObject("/transits", payload);
     }
 
+    public boolean health() {
+        try {
+            restClient.get()
+                    .uri("/health")
+                    .retrieve()
+                    .toBodilessEntity();
+            return true;
+        } catch (RestClientException exception) {
+            return false;
+        }
+    }
+
     private JsonNode postForObject(String path, Map<String, Object> payload) {
         try {
             JsonNode response = restClient.post()

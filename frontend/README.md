@@ -8,6 +8,8 @@ SPA de astrología construida con Vite, React y TypeScript.
 - React 19
 - TypeScript 7
 - React Router
+- Jest + React Testing Library
+- Playwright (Chromium y WebKit)
 - pnpm
 
 ## Requisitos
@@ -42,6 +44,14 @@ Vite solo expone variables con prefijo `VITE_`. No pongas secretos en variables 
 
 `.env` está ignorado por git; `.env.example` sí se versiona.
 
+## Sesión
+
+- El backend entrega el JWT en una cookie `HttpOnly`; el frontend nunca guarda el token.
+- `apiRequest` usa `credentials: 'include'` y añade `X-XSRF-TOKEN` en mutaciones leyendo la cookie `XSRF-TOKEN`.
+- Al montar, `AuthProvider` pide `/api/auth/csrf` y valida la sesión con `/api/auth/me`.
+- Logout llama a `POST /api/auth/logout`, que revoca la sesión en el servidor.
+- Contraseñas de mínimo 12 caracteres.
+
 ## Scripts
 
 ```powershell
@@ -49,41 +59,71 @@ pnpm dev       # servidor de desarrollo
 pnpm build     # build de producción
 pnpm preview   # previsualizar build
 pnpm lint      # oxlint
+pnpm test      # Jest + Testing Library
+pnpm test:e2e  # Playwright (Chromium y WebKit)
 ```
+
+## Pruebas
+
+- **Unitarias** (`pnpm test`): Jest con transform de SWC sobre jsdom. Cubren formato de posiciones, guard de sesión, login con error y formulario de nacimiento.
+- **E2E** (`pnpm test:e2e`): Playwright con Chromium y WebKit. Interceptan `/api/**`, así que no necesitan backend ni base de datos.
+- La primera vez, instala los navegadores:
+
+```powershell
+pnpm exec playwright install chromium webkit
+```
+
+Los artefactos de Playwright (`test-results/`, `playwright-report/`) están ignorados por git.
 
 ## Estructura
 
 ```text
 frontend/
+├── e2e/              pruebas Playwright
 ├── public/
 ├── src/
-│   ├── assets/
+│   ├── api/          cliente fetch y tipos de la API
+│   ├── assets/fonts/ Instrument Serif (OFL)
+│   ├── auth/         sesión, contexto y guard de rutas
+│   ├── chart/        hook de la carta del usuario
+│   ├── components/   layout, shell de autenticación y dial
+│   ├── forms/        utilidades de formularios y validación
+│   ├── lib/          formato de fechas, horas y posiciones
+│   ├── pages/        login, registro, onboarding, carta, tránsitos, lecturas y perfil
 │   ├── App.tsx
 │   ├── main.tsx
 │   └── index.css
 ├── .env.example
 ├── index.html
+├── jest.config.cjs
 ├── package.json
+├── playwright.config.ts
 ├── pnpm-lock.yaml
 └── vite.config.ts
 ```
 
+## Diseño
+
+- Modo de producto: **Operate**. Prioriza legibilidad, jerarquía y estados reales sobre decoración.
+- Tipografía: Instrument Serif (autoalojada, licencia OFL en `src/assets/fonts/OFL.txt`) para títulos; pila del sistema para texto.
+- Paleta en `src/index.css`: tinta fría de fondo, latón como único acento, tema claro y oscuro por `prefers-color-scheme`.
+- Sin librería de UI ni CSS. Tokens semánticos, bordes de 1 px, sin sombras.
+- Formularios con validación nativa y `:user-invalid`: el error no aparece hasta que el usuario interactúa. `aria-invalid` se sincroniza desde `AuthShell`.
+- Movimiento: una sola animación, el arco del dial; se desactiva con `prefers-reduced-motion`.
+
 ## Estado
 
-Scaffold inicial. Pendiente:
+F1–F6 completados: rutas y guard de sesión, registro con datos de nacimiento, carta natal con lectura integral, tránsitos, lecturas diaria/semanal/mensual, perfil editable y pruebas unitarias/E2E. Pendiente:
 
-- Rutas de login/registro y guard de sesión.
-- Cliente HTTP con JWT.
-- Onboarding de datos de nacimiento.
-- Carta natal, tránsitos y lecturas.
-- Tests de componentes y flujos.
+- Despliegue del frontend (F7).
+- CORS y variables de producción.
 
-El frontend consumirá la API del backend en `/api`. El backend se construye primero; las contrataciones de pantallas se harán cuando los endpoints estén estables.
+El frontend consume la API del backend en `/api`; los contratos están estables desde F1.
 
 ## Backend local
 
 ```powershell
-cd backend
+cd ..\backend
 docker compose -f docker-compose.db.yml up -d
 .\run-dev.cmd
 ```

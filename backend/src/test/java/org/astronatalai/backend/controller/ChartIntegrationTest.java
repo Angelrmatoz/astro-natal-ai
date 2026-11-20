@@ -32,7 +32,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 class ChartIntegrationTest extends AbstractIntegrationTest {
 
-    private static final String PASSWORD = "secret123";
+    private static final String PASSWORD = "secret12345678";
     private static final String CITY = "Santo Domingo";
 
     @Autowired

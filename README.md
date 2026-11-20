@@ -6,24 +6,26 @@ El proyecto se construye primero el backend, con contratos estables y tests, y d
 
 ## Estado
 
-- Backend: autenticación JWT, carta natal, tránsitos y persistencia en PostgreSQL.
-- Frontend: scaffold de Vite + React + TypeScript.
-- Pendiente: lecturas con Gemma 4, endurecimiento, UX del frontend y despliegue.
-- `astro-engine` todavía no existe; los endpoints de carta y tránsitos responden `503` hasta que esté disponible.
+- Backend: autenticación JWT, carta natal, tránsitos, lecturas IA (diaria, semanal, mensual e integral de carta) y persistencia en PostgreSQL.
+- `astro-engine`: sidecar de cálculo astrológico con `astronomy-engine`; posiciones verificadas contra JPL Horizons con error menor a `0.01°`.
+- Frontend: fundaciones SPA, registro con datos de nacimiento, perfil editable, carta natal, tránsitos y lecturas.
+- Pendiente: despliegue (F7).
 
 ## Stack
 
 - Backend: Java 25, Spring Boot 4.1, Spring Security, JWT HS256, JPA, Flyway, PostgreSQL 18.
+- Motor: Node.js 24 con `astronomy-engine` (MIT).
 - Frontend: Vite 8, React 19, TypeScript 7, React Router, pnpm.
 - Infraestructura: Docker Compose para PostgreSQL, Testcontainers para integración.
 - Secretos: Infisical.
-- IA prevista: Gemma 4 vía Google GenAI SDK.
+- IA: Gemma 4 vía Google GenAI SDK.
 
 ## Estructura
 
 ```text
 astro-natal-ai/
 ├── backend/          Spring Boot + PostgreSQL + tests
+├── astro-engine/     sidecar Node de cálculo astrológico
 ├── frontend/         SPA Vite + React
 ├── .github/          CI de GitHub Actions
 ├── .run/             Run configuration compartida de IntelliJ
@@ -61,6 +63,11 @@ Los `.env` reales están ignorados por git.
 | `JWT_ISSUER` | Emisor del token |
 | `GEOCODING_URL` | Base de Open-Meteo Geocoding |
 | `ASTRO_ENGINE_URL` | URL interna del motor astrológico |
+| `GOOGLE_AI_API_KEY` | API key de Google AI Studio |
+| `GOOGLE_AI_MODEL` | Modelo principal, `gemma-4-31b-it` |
+| `GOOGLE_AI_FALLBACK_MODEL` | Fallback, `gemma-4-26b-a4b-it` |
+| `GOOGLE_AI_TIMEOUT_SECONDS` | Timeout de la llamada a IA, en segundos |
+| `CORS_ALLOWED_ORIGINS` | Origen permitido del frontend, separado por comas |
 
 `application.properties` es el archivo central. Los perfiles `dev` y `prod` solo contienen overrides; los valores vienen de `.env`, Infisical o variables de IntelliJ. `server.port=8080` está fijado en el central.
 
@@ -89,14 +96,22 @@ En IntelliJ hay una Run Configuration compartida: **Backend (Infisical)**. Si us
 docker compose -f backend/docker-compose.db.yml up -d
 ```
 
-2. Backend:
+2. Motor astrológico:
+
+```powershell
+cd astro-engine
+pnpm install
+pnpm start
+```
+
+3. Backend:
 
 ```powershell
 cd backend
 infisical run --env=dev -- .\mvnw.cmd spring-boot:run
 ```
 
-3. Frontend:
+4. Frontend:
 
 ```powershell
 cd frontend
@@ -104,26 +119,40 @@ pnpm install
 pnpm dev
 ```
 
-Backend: `http://localhost:8080` · Frontend: `http://localhost:5173`
+Backend: `http://localhost:8080` · Motor: `http://localhost:3001` · Frontend: `http://localhost:5173`
 
 ## Tests
 
 ```powershell
 cd backend
 .\mvnw.cmd test
+
+cd astro-engine
+pnpm test
+
+cd frontend
+pnpm test
+pnpm exec playwright install chromium webkit   # una vez
+pnpm test:e2e
 ```
 
-Incluye tests unitarios y de integración con Testcontainers. Docker Desktop debe estar corriendo.
+El backend usa JUnit 5, Mockito y Testcontainers. El motor valida sus posiciones contra fixtures de JPL Horizons con tolerancia de `0.01°`. El frontend usa Jest y React Testing Library para componentes, y Playwright con Chromium y WebKit para flujos.
 
 ## API
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `POST` | `/api/auth/register` | Registro |
-| `POST` | `/api/auth/login` | Login y JWT |
+| `POST` | `/api/auth/register` | Registro y cookie de sesión |
+| `POST` | `/api/auth/login` | Login y cookie de sesión |
+| `POST` | `/api/auth/logout` | Revoca la sesión |
+| `GET` | `/api/auth/me` | Usuario de la sesión |
+| `GET` | `/api/auth/csrf` | Cookie CSRF |
+| `PATCH` | `/api/users/me` | Nombre y zona horaria del perfil |
+| `GET` | `/api/geocoding/search?q=` | Sugerencias de ciudades con coordenadas |
 | `POST` | `/api/charts` | Crear/actualizar carta natal |
 | `GET` | `/api/charts/me` | Carta del usuario |
 | `GET` | `/api/transits/current` | Tránsitos actuales |
+| `POST` | `/api/readings` | Lectura IA: `day`, `week`, `month` o `natal` |
 | `GET` | `/actuator/health` | Healthcheck |
 
 ## CI y ramas
@@ -139,4 +168,10 @@ Incluye tests unitarios y de integración con Testcontainers. Docker Desktop deb
 - Nunca commitear `.env`, `.infisical.yaml` ni secretos reales.
 - `.env.example` solo contiene nombres y valores de ejemplo.
 - `JWT_SECRET` es obligatorio; si falta, el backend falla al arrancar.
-- El `astro-engine` debe calcular la carta y los tránsitos; el backend no inventa posiciones.
+- Contraseñas con BCrypt; mínimo 12 caracteres.
+- La sesión viaja en cookie `HttpOnly` (`AUTH_TOKEN`); el JWT no se guarda en `localStorage`.
+- Mutaciones con cookie exigen CSRF de doble envío (`XSRF-TOKEN` + `X-XSRF-TOKEN`).
+- `POST /api/auth/logout` revoca la sesión en base de datos; un token revocado devuelve 401.
+- Login limitado a 5 intentos por correo e IP cada 15 minutos.
+- En producción, `AUTH_COOKIE_SECURE=true` y `AUTH_COOKIE_SAME_SITE=None`; el HTTPS lo aporta la plataforma.
+- El `astro-engine` calcula la carta y los tránsitos; el backend no inventa posiciones.

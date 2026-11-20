@@ -33,6 +33,7 @@ class JwtServiceTest {
         Jwt jwt = decoder.decode(issued.value());
 
         assertThat(jwt.getSubject()).isEqualTo(userId.toString());
+        assertThat(jwt.getId()).isEqualTo(issued.id()).isNotBlank();
         assertThat(jwt.getClaimAsString("email")).isEqualTo("ana@example.com");
         assertThat(jwt.getClaimAsString("iss")).isEqualTo("test-issuer");
         assertThat(issued.expiresAt()).isAfter(Instant.now().plusSeconds(59 * 60));

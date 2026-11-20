@@ -4,8 +4,12 @@ import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
+import org.astronatalai.backend.repository.AuthSessionRepository;
+import org.astronatalai.backend.security.CookieBearerTokenResolver;
+import org.astronatalai.backend.security.CsrfCookieFilter;
 import org.astronatalai.backend.security.RestAccessDeniedHandler;
 import org.astronatalai.backend.security.RestAuthenticationEntryPoint;
+import org.astronatalai.backend.security.SessionRevocationFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +23,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -27,16 +32,28 @@ public class SecurityConfig {
 
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
+    private final AuthSessionRepository authSessionRepository;
+    private final AuthCookieProperties cookieProperties;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/geocoding/search",
+                                "/actuator/health", "/actuator/health/**").permitAll()
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .bearerTokenResolver(new CookieBearerTokenResolver(cookieProperties.getCookieName()))
+                        .jwt(Customizer.withDefaults()))
+                .addFilterBefore(
+                        new CsrfCookieFilter(cookieProperties),
+                        BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(
+                        new SessionRevocationFilter(authSessionRepository),
+                        BearerTokenAuthenticationFilter.class)
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler));

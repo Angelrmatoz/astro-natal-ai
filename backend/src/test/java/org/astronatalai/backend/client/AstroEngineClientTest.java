@@ -101,6 +101,23 @@ class AstroEngineClientTest {
     }
 
     @Test
+    void reportsEngineHealth() {
+        server.expect(requestTo(startsWith("https://engine.test/health")))
+                .andRespond(withSuccess());
+
+        assertThat(client.health()).isTrue();
+        server.verify();
+    }
+
+    @Test
+    void reportsEngineDownWhenHealthFails() {
+        server.expect(requestTo(startsWith("https://engine.test/health")))
+                .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+
+        assertThat(client.health()).isFalse();
+    }
+
+    @Test
     void mapsServerErrorsToEngineUnavailable() {
         server.expect(requestTo(startsWith("https://engine.test/natal-chart")))
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));

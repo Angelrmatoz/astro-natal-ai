@@ -22,15 +22,7 @@ public class GeocodingClient {
 
     public GeocodingResult geocode(String ciudad) {
         try {
-            OpenMeteoResponse response = restClient.get()
-                    .uri(uri -> uri.path("/v1/search")
-                            .queryParam("name", ciudad)
-                            .queryParam("count", 1)
-                            .queryParam("language", "es")
-                            .queryParam("format", "json")
-                            .build())
-                    .retrieve()
-                    .body(OpenMeteoResponse.class);
+            OpenMeteoResponse response = request(ciudad, 1);
 
             if (response == null || response.results() == null || response.results().isEmpty()) {
                 throw new GeocodingException("No se encontró la ciudad: " + ciudad);
@@ -41,13 +33,44 @@ public class GeocodingClient {
                 throw new GeocodingException("La ciudad no tiene una zona horaria IANA");
             }
 
-            return new GeocodingResult(
-                    displayName(result), result.latitude(), result.longitude(), result.timezone());
+            return toResult(result);
         } catch (GeocodingException exception) {
             throw exception;
         } catch (RestClientException exception) {
             throw new GeocodingException("No se pudo consultar el servicio de geocoding", exception);
         }
+    }
+
+    public List<GeocodingResult> search(String query) {
+        try {
+            OpenMeteoResponse response = request(query, 8);
+            if (response == null || response.results() == null) {
+                return List.of();
+            }
+            return response.results().stream()
+                    .filter(result -> result.timezone() != null && !result.timezone().isBlank())
+                    .map(GeocodingClient::toResult)
+                    .toList();
+        } catch (RestClientException exception) {
+            throw new GeocodingException("No se pudo consultar el servicio de geocoding", exception);
+        }
+    }
+
+    private OpenMeteoResponse request(String query, int count) {
+        return restClient.get()
+                .uri(uri -> uri.path("/v1/search")
+                        .queryParam("name", query)
+                        .queryParam("count", count)
+                        .queryParam("language", "es")
+                        .queryParam("format", "json")
+                        .build())
+                .retrieve()
+                .body(OpenMeteoResponse.class);
+    }
+
+    private static GeocodingResult toResult(OpenMeteoResult result) {
+        return new GeocodingResult(
+                displayName(result), result.latitude(), result.longitude(), result.timezone());
     }
 
     private static String displayName(OpenMeteoResult result) {

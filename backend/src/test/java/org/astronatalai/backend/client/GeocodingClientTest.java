@@ -60,6 +60,29 @@ class GeocodingClientTest {
     }
 
     @Test
+    void returnsSuggestionsWithCoordinates() {
+        server.expect(requestTo(startsWith("https://geo.test/v1/search")))
+                .andExpect(method(GET))
+                .andRespond(withSuccess("""
+                        {
+                          "results": [
+                            {"name":"Santo Domingo","country":"República Dominicana","admin1":"Distrito Nacional","latitude":18.47186,"longitude":-69.89232,"timezone":"America/Santo_Domingo"},
+                            {"name":"Santo Domingo Oeste","country":"República Dominicana","admin1":"Santo Domingo","latitude":18.5,"longitude":-69.99,"timezone":"America/Santo_Domingo"},
+                            {"name":"Sin zona","country":"N/A","latitude":0,"longitude":0,"timezone":null}
+                          ]
+                        }
+                        """, MediaType.APPLICATION_JSON));
+
+        var results = client.search("Santo");
+
+        assertThat(results).hasSize(2);
+        assertThat(results.getFirst().ciudad()).contains("Santo Domingo");
+        assertThat(results.getFirst().latitud()).isEqualTo(18.47186);
+        assertThat(results.getFirst().timezone()).isEqualTo("America/Santo_Domingo");
+        server.verify();
+    }
+
+    @Test
     void rejectsUnknownCity() {
         server.expect(requestTo(startsWith("https://geo.test/v1/search")))
                 .andRespond(withSuccess("{\"results\":[]}", MediaType.APPLICATION_JSON));

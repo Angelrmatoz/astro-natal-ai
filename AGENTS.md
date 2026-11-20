@@ -8,22 +8,23 @@ Aplicación full-stack de astrología personalizada:
 
 - Backend: Spring Boot + PostgreSQL.
 - Frontend: SPA Vite + React + TypeScript.
-- Motor astrológico: `astro-engine` (pendiente, sidecar Node).
-- IA: Gemma 4 (pendiente).
+- Motor astrológico: `astro-engine` (sidecar Node con `astronomy-engine`).
+- IA: Gemma 4 con fallback.
 
 El backend se construye primero; el frontend consume contratos estables.
 
 ## Estado
 
-- Implementado: autenticación JWT, carta natal, tránsitos, persistencia y tests.
-- Pendiente: lecturas IA, endurecimiento, frontend funcional, `astro-engine`.
-- `astro-engine` no existe todavía: los endpoints que dependen de él devuelven `503`.
+- Implementado: autenticación JWT, carta natal, tránsitos, lecturas IA, CORS, health del engine, `astro-engine` y persistencia.
+- Frontend: fundaciones SPA (rutas, guards, cliente HTTP). Faltan onboarding, carta, tránsitos y lecturas.
+- Pendiente: F2–F7 del frontend y despliegue.
 
 ## Estructura
 
 ```text
 astro-natal-ai/
 ├── backend/      Spring Boot, PostgreSQL, tests
+├── astro-engine/ cálculo astrológico (Node, puerto 3001)
 ├── frontend/     Vite + React + TypeScript
 ├── .github/      CI de GitHub Actions
 ├── .run/         Run configuration compartida de IntelliJ
@@ -55,9 +56,27 @@ cd frontend
 pnpm install
 pnpm dev
 pnpm build
+pnpm test
+pnpm test:e2e
+
+# Motor astrológico
+cd astro-engine
+pnpm install
+pnpm test
+pnpm start
 ```
 
-No usar `npm` en el frontend; el proyecto usa `pnpm`.
+El proyecto usa `pnpm` en todos los paquetes Node. No usar `npm` para instalar o ejecutar scripts.
+
+## Motor astrológico
+
+- `astro-engine/` es un servidor Node sin framework (`node:http`), puerto `3001`.
+- Librería: `astronomy-engine` (MIT). No usar Swiss Ephemeris: licencia AGPL.
+- Contrato en `astro-engine/README.md`: `GET /health`, `POST /natal-chart`, `POST /transits`.
+- Casas de signo completo; sin hora de nacimiento no devuelve ascendente ni casas.
+- El golden test compara contra fixtures de JPL Horizons con tolerancia de `0.01°` (`astro-engine/test/fixtures/`).
+- Antes de cerrar un cambio del motor: `cd astro-engine && pnpm test`.
+- El backend no calcula posiciones: solo orquesta y persiste el JSON del motor.
 
 ## Arquitectura del backend
 
@@ -90,12 +109,23 @@ No poner lógica de negocio en controllers ni acceso a datos en services.
 - No commitear `.env`, `.infisical.yaml` ni secretos reales.
 - No agregar secretos a variables `VITE_*`; terminan en el bundle público.
 
+## Seguridad
+
+- Contraseñas con BCrypt; mínimo 12 caracteres y máximo 72 (límite de BCrypt).
+- El JWT viaja en cookie `HttpOnly` `AUTH_TOKEN`; nunca guardarlo en `localStorage` ni exponerlo en el SPA.
+- Toda mutación autenticada por cookie debe enviar `X-XSRF-TOKEN`; el backend valida contra la cookie `XSRF-TOKEN`.
+- `POST /api/auth/logout` revoca la fila de `auth_sessions`; no confiar solo en borrar la cookie.
+- Login limitado con `LoginRateLimiter` (5 intentos / 15 min por correo e IP).
+- En producción, cookies `Secure` y `SameSite=None`; el frontend y el backend están en dominios distintos.
+
 ## Tests y CI
 
 - Antes de cerrar un cambio de backend: `cd backend && .\mvnw.cmd test`.
 - Tests de integración usan Testcontainers; Docker Desktop debe estar corriendo.
 - Los tests usan el perfil `dev` y un secreto exclusivo de test.
 - No mockear PostgreSQL en tests de integración; usar Testcontainers.
+- Antes de cerrar un cambio de frontend: `cd frontend && pnpm test && pnpm test:e2e`.
+- Playwright usa Chromium y WebKit; instalar con `pnpm exec playwright install chromium webkit`.
 - CI: `.github/workflows/backend-ci.yml`, job `backend-tests`.
 - El workflow corre en PRs hacia `main`; no corre al hacer merge.
 - `main` requiere PR y el check `backend-tests`; reviews requeridos: `0`.
@@ -111,13 +141,11 @@ No poner lógica de negocio en controllers ni acceso a datos en services.
 - No exponer entidades directamente en controllers.
 - No imprimir secretos en logs, tests ni respuestas.
 - Documentación humana en los `README.md`; este archivo es para agentes.
+- `PLAN.md` y `CONTEXT.md` son documentos locales: están en `.gitignore` y no se versionan.
+- `AGENTS.md` sí se versiona: es el contrato operativo del repositorio.
 
 ## Pendientes
 
-1. `astro-engine` + golden test contra astro.com (<1°).
-2. Lecturas IA con Gemma 4.
-3. Endurecimiento del backend.
-4. Frontend: login, onboarding, carta, tránsitos y lecturas.
-5. Despliegue.
-
-No implementar funcionalidad del frontend antes de estabilizar los contratos del backend.
+1. F7: despliegue. Dockerfiles de backend y motor, build del frontend y variables de producción.
+2. Elegir proveedor antes de desplegar (Vercel solo para el frontend; backend y motor en Render/Railway/Fly o VPS).
+3. No desplegar ni crear recursos en la nube sin confirmación explícita.

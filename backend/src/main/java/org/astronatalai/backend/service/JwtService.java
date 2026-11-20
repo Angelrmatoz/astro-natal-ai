@@ -29,18 +29,20 @@ public class JwtService {
     public IssuedToken issue(UUID userId, String email) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(ttl);
+        String tokenId = UUID.randomUUID().toString();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .subject(userId.toString())
+                .id(tokenId)
                 .claim("email", email)
                 .issuedAt(now)
                 .expiresAt(expiresAt)
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         String token = encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
-        return new IssuedToken(token, expiresAt);
+        return new IssuedToken(token, tokenId, expiresAt);
     }
 
-    public record IssuedToken(String value, Instant expiresAt) {
+    public record IssuedToken(String value, String id, Instant expiresAt) {
     }
 }

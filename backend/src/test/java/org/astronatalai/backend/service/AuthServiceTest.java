@@ -14,8 +14,10 @@ import java.util.UUID;
 import org.astronatalai.backend.dto.AuthResponse;
 import org.astronatalai.backend.dto.LoginRequest;
 import org.astronatalai.backend.dto.RegisterRequest;
+import org.astronatalai.backend.entity.AuthSession;
 import org.astronatalai.backend.entity.User;
 import org.astronatalai.backend.exception.EmailAlreadyUsedException;
+import org.astronatalai.backend.repository.AuthSessionRepository;
 import org.astronatalai.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,13 +32,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 class AuthServiceTest {
 
     private static final String EMAIL = "ana@example.com";
-    private static final String PASSWORD = "secret123";
+    private static final String PASSWORD = "secret12345678";
     private static final String HASH = "$2a$10$hash";
     private static final JwtService.IssuedToken TOKEN = new JwtService.IssuedToken(
-            "token", Instant.parse("2026-11-06T00:00:00Z"));
+            "token", "token-id", Instant.parse("2026-11-06T00:00:00Z"));
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AuthSessionRepository authSessionRepository;
+
+    @Mock
+    private LoginRateLimiter loginRateLimiter;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -67,6 +75,7 @@ class AuthServiceTest {
         assertThat(saved.getValue().getEmail()).isEqualTo(EMAIL);
         assertThat(saved.getValue().getPasswordHash()).isEqualTo(HASH);
         assertThat(saved.getValue().getNombre()).isEqualTo("Ana");
+        verify(authSessionRepository).save(any(AuthSession.class));
     }
 
     @Test
@@ -86,7 +95,7 @@ class AuthServiceTest {
         when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(true);
         when(jwtService.issue(user.getId(), EMAIL)).thenReturn(TOKEN);
 
-        AuthResponse response = authService.login(new LoginRequest("Ana@Example.COM", PASSWORD));
+        AuthResponse response = authService.login(new LoginRequest("Ana@Example.COM", PASSWORD), "127.0.0.1");
 
         assertThat(response.token()).isEqualTo("token");
         assertThat(response.user().id()).isEqualTo(user.getId());
@@ -98,7 +107,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(false);
 
-        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, PASSWORD)))
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, PASSWORD), "127.0.0.1"))
                 .isInstanceOf(BadCredentialsException.class);
 
         verify(jwtService, never()).issue(any(UUID.class), any());
@@ -108,7 +117,7 @@ class AuthServiceTest {
     void loginRejectsUnknownEmail() {
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, PASSWORD)))
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, PASSWORD), "127.0.0.1"))
                 .isInstanceOf(BadCredentialsException.class);
     }
 }

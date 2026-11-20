@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { generateReading } from '../api/astro'
+import { generateReading, getCurrentReading } from '../api/astro'
 import { ApiError } from '../api/client'
 import type { ChartResponse, ReadingResponse } from '../api/types'
 import { useAuth } from '../auth/useAuth'
 import { useMyChart } from '../chart/useMyChart'
+import { formatDate } from '../lib/format'
 
 type Period = 'day' | 'week' | 'month'
 
@@ -21,19 +22,50 @@ function readingMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : 'No se pudo generar la lectura.'
 }
 
+function nextAvailableDate(reading: ReadingResponse) {
+  const next = new Date(`${reading.rangoFin}T00:00:00Z`)
+  next.setUTCDate(next.getUTCDate() + 1)
+  return formatDate(next.toISOString().slice(0, 10))
+}
+
 function ReadingsDetail({ chart }: { chart: ChartResponse }) {
   const { session } = useAuth()
   const [period, setPeriod] = useState<Period>('day')
   const [reading, setReading] = useState<ReadingResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [checking, setChecking] = useState(true)
   const [pending, setPending] = useState(false)
 
   const phrase = PERIODS.find((option) => option.value === period)?.phrase ?? 'del día'
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    getCurrentReading(chart.id, period, controller.signal)
+      .then((current) => setReading(current))
+      .catch((cause: unknown) => {
+        if (controller.signal.aborted) {
+          return
+        }
+        if (cause instanceof ApiError && cause.status === 404) {
+          return
+        }
+        setError(readingMessage(cause))
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setChecking(false)
+        }
+      })
+
+    return () => controller.abort()
+  }, [chart.id, period])
 
   function selectPeriod(next: Period) {
     setPeriod(next)
     setReading(null)
     setError(null)
+    setChecking(true)
   }
 
   async function handleGenerate() {
@@ -43,7 +75,7 @@ function ReadingsDetail({ chart }: { chart: ChartResponse }) {
     setError(null)
     setPending(true)
     try {
-      setReading(await generateReading(session.token, chart.id, period))
+      setReading(await generateReading(chart.id, period))
     } catch (cause) {
       setError(readingMessage(cause))
     } finally {
@@ -80,16 +112,25 @@ function ReadingsDetail({ chart }: { chart: ChartResponse }) {
         ))}
       </div>
 
+      {checking && !reading ? <p className="muted">Buscando tu lectura…</p> : null}
+
       {reading ? (
-        <article className="reading" aria-label={`Lectura ${phrase}`}>
-          {reading.contenidoTexto
-            .split(/\n{2,}/)
-            .map((paragraph) => paragraph.replace(/^#{1,6}\s*/gm, '').replace(/\*/g, '').trim())
-            .filter((paragraph) => paragraph !== '')
-            .map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
-        </article>
+        <>
+          <article className="reading" aria-label={`Lectura ${phrase}`}>
+            {reading.contenidoTexto
+              .split(/\n{2,}/)
+              .map((paragraph) => paragraph.replace(/^#{1,6}\s*/gm, '').replace(/\*/g, '').trim())
+              .filter((paragraph) => paragraph !== '')
+              .map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
+          </article>
+          <p className="notice">
+            Ya tienes tu lectura {phrase}. Podrás generar otra el{' '}
+            <strong>{nextAvailableDate(reading)}</strong> a las 00:00 de la zona horaria de tu
+            carta. Hasta entonces se muestra esta misma lectura.
+          </p>
+        </>
       ) : null}
 
       {error ? (
@@ -99,11 +140,11 @@ function ReadingsDetail({ chart }: { chart: ChartResponse }) {
       ) : null}
 
       <div className="reading__actions">
-        {reading ? null : (
+        {!reading && !checking ? (
           <button type="button" className="button" onClick={handleGenerate} disabled={pending}>
             {pending ? 'Generando… puede tardar un minuto' : `Generar lectura ${phrase}`}
           </button>
-        )}
+        ) : null}
         <span className="muted">Interpretación astrológica, no consejo médico ni legal.</span>
       </div>
     </div>

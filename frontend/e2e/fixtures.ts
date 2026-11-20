@@ -41,6 +41,17 @@ export const chart = {
 
 export async function seedSession(page: Page) {
   await page.addInitScript((value) => {
-    localStorage.setItem('astro-natal-ai.session', JSON.stringify(value))
+    localStorage.setItem('astro-natal-ai.session', JSON.stringify({ user: value.user }))
   }, session)
+}
+
+export async function mockSessionApi(page: Page) {
+  await page.route('**/api/auth/csrf', (route) => route.fulfill({ status: 204, body: '' }))
+  await page.route('**/api/auth/me', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(session.user),
+    }),
+  )
 }

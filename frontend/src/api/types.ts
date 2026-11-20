@@ -2,6 +2,7 @@ export type SessionUser = {
   id: string
   email: string
   nombre: string
+  timezone?: string | null
 }
 
 export type AuthResponse = {
@@ -67,6 +68,16 @@ export type ChartRequest = {
   horaNac: string | null
   timeKnown: boolean
   ciudad: string
+  latitud?: number
+  longitud?: number
+  timezone?: string
+}
+
+export type GeocodingSuggestion = {
+  ciudad: string
+  latitud: number
+  longitud: number
+  timezone: string
 }
 
 export type ReadingResponse = {

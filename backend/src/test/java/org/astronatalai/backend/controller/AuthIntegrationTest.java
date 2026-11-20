@@ -6,10 +6,12 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
 import java.util.UUID;
 import org.astronatalai.backend.AbstractIntegrationTest;
 import org.astronatalai.backend.entity.User;
@@ -21,7 +23,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 class AuthIntegrationTest extends AbstractIntegrationTest {
 
-    private static final String PASSWORD = "secret123";
+    private static final String PASSWORD = "secret12345678";
 
     @Autowired
     private MockMvc mockMvc;
@@ -37,6 +39,8 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
                         .contentType(APPLICATION_JSON)
                         .content(registerBody(email.toUpperCase(), PASSWORD, "Ana")))
                 .andExpect(status().isCreated())
+                .andExpect(cookie().exists("AUTH_TOKEN"))
+                .andExpect(cookie().httpOnly("AUTH_TOKEN", true))
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.user.email").value(email))
@@ -98,6 +102,75 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
 
         mockMvc.perform(get("/api/charts/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void csrfEndpointIssuesTheCsrfCookie() throws Exception {
+        mockMvc.perform(get("/api/auth/csrf"))
+                .andExpect(status().isNoContent())
+                .andExpect(cookie().exists("XSRF-TOKEN"));
+    }
+
+    @Test
+    void csrfEndpointIgnoresAStaleSessionCookie() throws Exception {
+        mockMvc.perform(get("/api/auth/csrf").cookie(new Cookie("AUTH_TOKEN", "invalid")))
+                .andExpect(status().isNoContent())
+                .andExpect(cookie().exists("XSRF-TOKEN"));
+    }
+
+    @Test
+    void logoutRevokesTheSession() throws Exception {
+        String token = registerOk(uniqueEmail());
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/charts/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void meReturnsTheAuthenticatedUser() throws Exception {
+        String email = uniqueEmail();
+        String token = registerOk(email);
+
+        mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value(email));
+    }
+
+    @Test
+    void cookieAuthenticationRequiresCsrfForMutations() throws Exception {
+        String token = registerOk(uniqueEmail());
+
+        mockMvc.perform(post("/api/charts")
+                        .cookie(new Cookie("AUTH_TOKEN", token))
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {"fechaNac":"1990-05-01","timeKnown":false,"ciudad":"Santo Domingo"}
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void blocksLoginAfterFiveFailures() throws Exception {
+        String email = uniqueEmail();
+        registerOk(email);
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(APPLICATION_JSON)
+                            .content(loginBody(email, "wrong-password")))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(loginBody(email, PASSWORD)))
+                .andExpect(status().isTooManyRequests());
     }
 
     @Test

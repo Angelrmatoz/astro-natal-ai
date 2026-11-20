@@ -26,7 +26,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 class TransitIntegrationTest extends AbstractIntegrationTest {
 
-    private static final String PASSWORD = "secret123";
+    private static final String PASSWORD = "secret12345678";
 
     @Autowired
     private MockMvc mockMvc;

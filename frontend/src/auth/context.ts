@@ -4,9 +4,10 @@ import type { Session } from './session'
 
 export type AuthContextValue = {
   session: Session | null
+  ready: boolean
   login: (email: string, password: string) => Promise<AuthResponse>
   register: (nombre: string, email: string, password: string) => Promise<AuthResponse>
-  updateProfile: (nombre: string) => Promise<void>
+  updateProfile: (nombre: string, timezone?: string) => Promise<void>
   logout: () => void
 }
 

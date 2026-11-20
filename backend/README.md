@@ -116,9 +116,13 @@ También puedes ejecutar `BackendApplication` desde IntelliJ con perfil `dev` y 
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `POST` | `/api/auth/register` | Registro y token |
-| `POST` | `/api/auth/login` | Login y token |
-| `PATCH` | `/api/users/me` | Actualizar el nombre del perfil |
+| `POST` | `/api/auth/register` | Registro, cookie de sesión y token |
+| `POST` | `/api/auth/login` | Login, cookie de sesión y token |
+| `POST` | `/api/auth/logout` | Revoca la sesión y borra la cookie |
+| `GET` | `/api/auth/me` | Usuario de la sesión actual |
+| `GET` | `/api/auth/csrf` | Emite la cookie CSRF |
+| `GET` | `/api/geocoding/search?q=` | Sugerencias de ciudades con coordenadas y zona horaria (público) |
+| `PATCH` | `/api/users/me` | Actualizar nombre y zona horaria del perfil |
 | `POST` | `/api/charts` | Crear o actualizar la carta |
 | `GET` | `/api/charts/me` | Carta del usuario autenticado |
 | `GET` | `/api/transits/current` | Tránsitos actuales |
@@ -126,6 +130,15 @@ También puedes ejecutar `BackendApplication` desde IntelliJ con perfil `dev` y 
 | `GET` | `/actuator/health` | Healthcheck |
 
 Los errores usan `application/problem+json` (`ProblemDetail`).
+
+## Seguridad de sesión
+
+- Contraseñas con BCrypt (coste 10, sal por usuario). Mínimo 12 caracteres.
+- JWT HS256 de 24 h con `jti`; el navegador lo recibe en cookie `HttpOnly` (`AUTH_TOKEN`). El campo `token` de la respuesta queda para clientes API.
+- Cada token tiene fila en `auth_sessions`; `POST /api/auth/logout` la revoca y el filtro rechaza tokens revocados.
+- CSRF de doble envío: cookie `XSRF-TOKEN` + header `X-XSRF-TOKEN` en métodos que mutan cuando la autenticación viaja por cookie.
+- Login limitado a 5 intentos por correo e IP cada 15 minutos.
+- `AUTH_COOKIE_SECURE` y `AUTH_COOKIE_SAME_SITE`: en producción `true` y `None` (frontend y backend en dominios distintos, siempre sobre HTTPS).
 
 ## Smoke manual
 

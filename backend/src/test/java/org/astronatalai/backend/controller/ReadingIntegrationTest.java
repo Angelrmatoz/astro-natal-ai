@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -30,7 +31,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 class ReadingIntegrationTest extends AbstractIntegrationTest {
 
-    private static final String PASSWORD = "secret123";
+    private static final String PASSWORD = "secret12345678";
 
     @Autowired
     private MockMvc mockMvc;
@@ -91,6 +92,40 @@ class ReadingIntegrationTest extends AbstractIntegrationTest {
                 .isEqualTo(firstId);
         verify(gemmaClient, times(1)).generate(anyString());
         verify(astroEngineClient, times(0)).transits(any(), any());
+    }
+
+    @Test
+    void returnsTheCurrentReadingWithoutGeneratingAgain() throws Exception {
+        String token = register(uniqueEmail());
+        String chartId = createChart(token);
+        stubReadingDependencies();
+
+        MvcResult created = postReading(token, chartId, "day")
+                .andExpect(status().isOk())
+                .andReturn();
+        String createdId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(get("/api/readings/current")
+                        .header("Authorization", "Bearer " + token)
+                        .param("chartId", chartId)
+                        .param("type", "day"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(createdId))
+                .andExpect(jsonPath("$.tipo").value("day"));
+
+        verify(gemmaClient, times(1)).generate(anyString());
+    }
+
+    @Test
+    void returns404WhenThePeriodHasNoReading() throws Exception {
+        String token = register(uniqueEmail());
+        String chartId = createChart(token);
+
+        mockMvc.perform(get("/api/readings/current")
+                        .header("Authorization", "Bearer " + token)
+                        .param("chartId", chartId)
+                        .param("type", "month"))
+                .andExpect(status().isNotFound());
     }
 
     @Test

@@ -20,7 +20,7 @@ function TransitDetail({ chart }: { chart: ChartResponse }) {
     }
     const controller = new AbortController()
 
-    getTransits(session.token, controller.signal)
+    getTransits(controller.signal)
       .then((result) => setTransits(result))
       .catch((cause: unknown) => {
         if (controller.signal.aborted) {

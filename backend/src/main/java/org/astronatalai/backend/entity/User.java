@@ -29,6 +29,9 @@ public class User {
     @Column(nullable = false, length = 120)
     private String nombre;
 
+    @Column(length = 64)
+    private String timezone;
+
     @CreationTimestamp
     @Column(name = "creado_en", nullable = false, updatable = false)
     private Instant creadoEn;
@@ -41,5 +44,9 @@ public class User {
 
     public void rename(String nombre) {
         this.nombre = nombre;
+    }
+
+    public void updateTimezone(String timezone) {
+        this.timezone = timezone;
     }
 }

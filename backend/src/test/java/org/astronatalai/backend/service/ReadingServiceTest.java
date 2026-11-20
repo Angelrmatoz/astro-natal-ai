@@ -22,6 +22,7 @@ import org.astronatalai.backend.dto.CreateReadingRequest;
 import org.astronatalai.backend.dto.ReadingResponse;
 import org.astronatalai.backend.entity.BirthChart;
 import org.astronatalai.backend.entity.Reading;
+import org.astronatalai.backend.entity.User;
 import org.astronatalai.backend.exception.ChartNotFoundException;
 import org.astronatalai.backend.repository.BirthChartRepository;
 import org.astronatalai.backend.repository.ReadingRepository;
@@ -135,6 +136,69 @@ class ReadingServiceTest {
         ArgumentCaptor<Reading> saved = ArgumentCaptor.forClass(Reading.class);
         verify(readingRepository).saveAndFlush(saved.capture());
         assertThat(saved.getValue().getTransitosSnapshot()).isEqualTo(chartData);
+    }
+
+    @Test
+    void dailyReadingUsesTheChartTimezoneForMidnight() {
+        LocalDate localDay = LocalDate.of(2026, 11, 15);
+        Clock localClock = Clock.fixed(
+                Instant.parse("2026-11-16T03:00:00Z"), ZoneOffset.UTC);
+        ReadingService service = new ReadingService(
+                birthChartRepository, readingRepository, astroEngineClient,
+                gemmaClient, promptBuilder, localClock);
+
+        when(chart.getId()).thenReturn(CHART_ID);
+        when(chart.getTimezone()).thenReturn("America/Santo_Domingo");
+        when(chart.getDatosCarta()).thenReturn(chartData);
+        when(birthChartRepository.findByIdAndUser_Id(CHART_ID, USER_ID))
+                .thenReturn(Optional.of(chart));
+        when(readingRepository.findByChartIdAndTipoAndRangoInicio(
+                CHART_ID, "day", localDay)).thenReturn(Optional.empty());
+        when(astroEngineClient.transits(chartData, localDay)).thenReturn(transitData);
+        when(promptBuilder.build(eq(chart), eq(transitData), eq(ReadingType.DAY), any()))
+                .thenReturn("prompt");
+        when(gemmaClient.generate("prompt"))
+                .thenReturn(new GemmaClient.GeneratedText("lectura local", "gemma-4-31b-it"));
+        when(readingRepository.saveAndFlush(any(Reading.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ReadingResponse response = service.generate(
+                USER_ID, new CreateReadingRequest(CHART_ID, "day"));
+
+        assertThat(response.rangoInicio()).isEqualTo(localDay);
+        assertThat(response.rangoFin()).isEqualTo(localDay);
+    }
+
+    @Test
+    void dailyReadingPrefersTheUserTimezone() {
+        LocalDate madridDay = LocalDate.of(2026, 11, 16);
+        Clock madridClock = Clock.fixed(
+                Instant.parse("2026-11-15T23:30:00Z"), ZoneOffset.UTC);
+        ReadingService service = new ReadingService(
+                birthChartRepository, readingRepository, astroEngineClient,
+                gemmaClient, promptBuilder, madridClock);
+
+        User user = new User("ana@example.com", "hash", "Ana");
+        user.updateTimezone("Europe/Madrid");
+        when(chart.getId()).thenReturn(CHART_ID);
+        when(chart.getUser()).thenReturn(user);
+        when(chart.getDatosCarta()).thenReturn(chartData);
+        when(birthChartRepository.findByIdAndUser_Id(CHART_ID, USER_ID))
+                .thenReturn(Optional.of(chart));
+        when(readingRepository.findByChartIdAndTipoAndRangoInicio(
+                CHART_ID, "day", madridDay)).thenReturn(Optional.empty());
+        when(astroEngineClient.transits(chartData, madridDay)).thenReturn(transitData);
+        when(promptBuilder.build(eq(chart), eq(transitData), eq(ReadingType.DAY), any()))
+                .thenReturn("prompt");
+        when(gemmaClient.generate("prompt"))
+                .thenReturn(new GemmaClient.GeneratedText("lectura madrid", "gemma-4-31b-it"));
+        when(readingRepository.saveAndFlush(any(Reading.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ReadingResponse response = service.generate(
+                USER_ID, new CreateReadingRequest(CHART_ID, "day"));
+
+        assertThat(response.rangoInicio()).isEqualTo(madridDay);
     }
 
     @Test

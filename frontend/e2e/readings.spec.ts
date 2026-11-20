@@ -1,10 +1,18 @@
 import { expect, test } from '@playwright/test'
-import { chart, seedSession } from './fixtures'
+import { chart, mockSessionApi, seedSession } from './fixtures'
 
 test('generates a daily reading for the stored chart', async ({ page }) => {
   await seedSession(page)
+  await mockSessionApi(page)
   await page.route('**/api/charts/me', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(chart) }),
+  )
+  await page.route('**/api/readings/current**', (route) =>
+    route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({ title: 'Lectura no encontrada', status: 404 }),
+    }),
   )
   await page.route('**/api/readings', (route) =>
     route.fulfill({
@@ -28,5 +36,6 @@ test('generates a daily reading for the stored chart', async ({ page }) => {
 
   await expect(page.getByText(/Hoy tu Sol recibe un trígono/)).toBeVisible()
   await expect(page.getByText(/Aprovecha la mañana/)).toBeVisible()
+  await expect(page.getByText(/Podrás generar otra el/)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Generar lectura del día' })).toHaveCount(0)
 })

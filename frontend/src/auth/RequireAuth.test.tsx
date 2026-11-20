@@ -31,6 +31,7 @@ describe('RequireAuth', () => {
   it('redirects to login without a session', () => {
     mockedUseAuth.mockReturnValue({
       session: null,
+      ready: true,
       login: jest.fn(),
       register: jest.fn(),
       updateProfile: jest.fn(),
@@ -46,10 +47,9 @@ describe('RequireAuth', () => {
   it('renders the protected content with a session', () => {
     mockedUseAuth.mockReturnValue({
       session: {
-        token: 'token',
         user: { id: 'u1', email: 'ana@example.com', nombre: 'Ana' },
-        expiresAt: '2099-01-01T00:00:00Z',
       },
+      ready: true,
       login: jest.fn(),
       register: jest.fn(),
       updateProfile: jest.fn(),

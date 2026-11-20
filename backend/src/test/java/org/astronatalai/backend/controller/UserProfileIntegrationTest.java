@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 class UserProfileIntegrationTest extends AbstractIntegrationTest {
 
-    private static final String PASSWORD = "secret123";
+    private static final String PASSWORD = "secret12345678";
 
     @Autowired
     private MockMvc mockMvc;
@@ -33,6 +33,33 @@ class UserProfileIntegrationTest extends AbstractIntegrationTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Ana María"));
+    }
+
+    @Test
+    void updatesTheTimezone() throws Exception {
+        String token = register(uniqueEmail(), "Ana");
+
+        mockMvc.perform(patch("/api/users/me")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {"nombre":"Ana","timezone":"Europe/Madrid"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timezone").value("Europe/Madrid"));
+    }
+
+    @Test
+    void rejectsAnInvalidTimezone() throws Exception {
+        String token = register(uniqueEmail(), "Ana");
+
+        mockMvc.perform(patch("/api/users/me")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {"nombre":"Ana","timezone":"Marte/Olympus"}
+                                """))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

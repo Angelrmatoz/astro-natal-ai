@@ -13,7 +13,6 @@ export class ApiError extends Error {
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
-  token?: string | null
   signal?: AbortSignal
 }
 
@@ -24,20 +23,36 @@ type ProblemDetail = {
 
 export const UNAUTHORIZED_EVENT = 'auth:unauthorized'
 
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+function readCookie(name: string) {
+  const prefix = `${name}=`
+  return document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix))
+    ?.slice(prefix.length)
+}
+
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const method = options.method ?? 'GET'
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json'
   }
-  if (options.token) {
-    headers.Authorization = `Bearer ${options.token}`
+  if (MUTATING_METHODS.has(method)) {
+    const csrfToken = readCookie('XSRF-TOKEN')
+    if (csrfToken) {
+      headers['X-XSRF-TOKEN'] = decodeURIComponent(csrfToken)
+    }
   }
 
   let response: Response
   try {
     response = await fetch(`${API_URL}${path}`, {
-      method: options.method ?? 'GET',
+      method,
       headers,
+      credentials: 'include',
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: options.signal,
     })
@@ -49,7 +64,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (!response.ok) {
-    if (response.status === 401 && options.token) {
+    if (response.status === 401 && !path.startsWith('/api/auth/')) {
       window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
     }
     const problem = await response

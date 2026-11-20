@@ -100,4 +100,28 @@ public class ApiExceptionHandler {
         problem.setTitle("Servicio no disponible");
         return problem;
     }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    ProblemDetail tooManyRequests(TooManyRequestsException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
+        problem.setTitle("Demasiados intentos");
+        return problem;
+    }
+
+    @ExceptionHandler(InvalidProfileRequestException.class)
+    ProblemDetail invalidProfile(InvalidProfileRequestException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, exception.getMessage());
+        problem.setTitle("Perfil inválido");
+        return problem;
+    }
+
+    @ExceptionHandler(ReadingNotFoundException.class)
+    ProblemDetail readingNotFound(ReadingNotFoundException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, exception.getMessage());
+        problem.setTitle("Lectura no encontrada");
+        return problem;
+    }
 }

@@ -44,7 +44,7 @@ export function OnboardingPage() {
     setError(null)
     setPending(true)
     try {
-      await saveChart(session.token, chartRequestFromFormData(new FormData(event.currentTarget)))
+      await saveChart(chartRequestFromFormData(new FormData(event.currentTarget)))
       navigate('/chart', { replace: true })
     } catch (cause) {
       setError(chartErrorMessage(cause))

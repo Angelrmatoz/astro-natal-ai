@@ -142,9 +142,13 @@ El backend usa JUnit 5, Mockito y Testcontainers. El motor valida sus posiciones
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `POST` | `/api/auth/register` | Registro |
-| `POST` | `/api/auth/login` | Login y JWT |
-| `PATCH` | `/api/users/me` | Actualizar el nombre del perfil |
+| `POST` | `/api/auth/register` | Registro y cookie de sesión |
+| `POST` | `/api/auth/login` | Login y cookie de sesión |
+| `POST` | `/api/auth/logout` | Revoca la sesión |
+| `GET` | `/api/auth/me` | Usuario de la sesión |
+| `GET` | `/api/auth/csrf` | Cookie CSRF |
+| `PATCH` | `/api/users/me` | Nombre y zona horaria del perfil |
+| `GET` | `/api/geocoding/search?q=` | Sugerencias de ciudades con coordenadas |
 | `POST` | `/api/charts` | Crear/actualizar carta natal |
 | `GET` | `/api/charts/me` | Carta del usuario |
 | `GET` | `/api/transits/current` | Tránsitos actuales |
@@ -164,4 +168,10 @@ El backend usa JUnit 5, Mockito y Testcontainers. El motor valida sus posiciones
 - Nunca commitear `.env`, `.infisical.yaml` ni secretos reales.
 - `.env.example` solo contiene nombres y valores de ejemplo.
 - `JWT_SECRET` es obligatorio; si falta, el backend falla al arrancar.
+- Contraseñas con BCrypt; mínimo 12 caracteres.
+- La sesión viaja en cookie `HttpOnly` (`AUTH_TOKEN`); el JWT no se guarda en `localStorage`.
+- Mutaciones con cookie exigen CSRF de doble envío (`XSRF-TOKEN` + `X-XSRF-TOKEN`).
+- `POST /api/auth/logout` revoca la sesión en base de datos; un token revocado devuelve 401.
+- Login limitado a 5 intentos por correo e IP cada 15 minutos.
+- En producción, `AUTH_COOKIE_SECURE=true` y `AUTH_COOKIE_SAME_SITE=None`; el HTTPS lo aporta la plataforma.
 - El `astro-engine` calcula la carta y los tránsitos; el backend no inventa posiciones.

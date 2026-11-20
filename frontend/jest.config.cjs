@@ -12,6 +12,7 @@ module.exports = {
           transform: { react: { runtime: 'automatic' } },
           target: 'es2022',
         },
+        module: { type: 'commonjs' },
       },
     ],
   },

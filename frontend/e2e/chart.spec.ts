@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { chart, seedSession } from './fixtures'
+import { chart, mockSessionApi, seedSession } from './fixtures'
 
 test('shows the chart without houses when the hour is unknown', async ({ page }) => {
   await seedSession(page)
+  await mockSessionApi(page)
   await page.route('**/api/charts/me', (route) =>
     route.fulfill({
       status: 200,

@@ -16,6 +16,7 @@ test('logs in and lands on the dashboard', async ({ page }) => {
       body: JSON.stringify({ ...session, tokenType: 'Bearer' }),
     }),
   )
+  await page.route('**/api/auth/csrf', (route) => route.fulfill({ status: 204, body: '' }))
   await page.route('**/api/charts/me', (route) =>
     route.fulfill({
       status: 404,
@@ -26,7 +27,7 @@ test('logs in and lands on the dashboard', async ({ page }) => {
 
   await page.goto('/login')
   await page.getByLabel('Correo').fill('ana@example.com')
-  await page.getByLabel('Contraseña').fill('secret123')
+  await page.getByLabel('Contraseña').fill('secret12345678')
   await page.getByRole('button', { name: 'Entrar' }).click()
 
   await expect(page).toHaveURL(/\/dashboard$/)

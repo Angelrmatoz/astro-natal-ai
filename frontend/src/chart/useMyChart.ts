@@ -11,14 +11,15 @@ export function useMyChart() {
   const [chart, setChart] = useState<ChartResponse | null>(null)
   const [status, setStatus] = useState<ChartStatus>('loading')
   const [error, setError] = useState<string | null>(null)
+  const userId = session?.user.id
 
   useEffect(() => {
-    if (!session) {
+    if (!userId) {
       return
     }
     const controller = new AbortController()
 
-    getMyChart(session.token, controller.signal)
+    getMyChart(controller.signal)
       .then((result) => {
         setChart(result)
         setStatus('ready')
@@ -36,7 +37,7 @@ export function useMyChart() {
       })
 
     return () => controller.abort()
-  }, [session])
+  }, [userId])
 
   return { chart, status, error }
 }

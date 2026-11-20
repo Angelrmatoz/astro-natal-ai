@@ -36,6 +36,11 @@ public class ChartService {
                 .orElseThrow(() -> new BadCredentialsException("Usuario no encontrado"));
         Location location = resolveLocation(request);
 
+        if (user.getTimezone() == null || user.getTimezone().isBlank()) {
+            user.updateTimezone(location.timezone());
+            userRepository.save(user);
+        }
+
         NatalChartCommand command = new NatalChartCommand(
                 request.fechaNac(),
                 request.horaNac(),

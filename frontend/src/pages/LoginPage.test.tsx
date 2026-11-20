@@ -15,6 +15,7 @@ describe('LoginPage', () => {
     const login = jest.fn().mockRejectedValue(new Error('Email o contraseña incorrectos'))
     mockedUseAuth.mockReturnValue({
       session: null,
+      ready: true,
       login,
       register: jest.fn(),
       updateProfile: jest.fn(),

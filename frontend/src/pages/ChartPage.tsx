@@ -32,7 +32,7 @@ function ChartDetail({ chart }: { chart: ChartResponse }) {
     setError(null)
     setPending(true)
     try {
-      setReading(await generateReading(session.token, chart.id, 'natal'))
+      setReading(await generateReading(chart.id, 'natal'))
     } catch (cause) {
       setError(readingMessage(cause))
     } finally {

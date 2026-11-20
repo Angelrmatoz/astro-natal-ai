@@ -17,12 +17,21 @@ function todayLocal() {
   return `${today.getFullYear()}-${month}-${day}`
 }
 
+function timezoneOptions(selected: string) {
+  const intl = Intl as typeof Intl & { supportedValuesOf?: (key: 'timeZone') => string[] }
+  const zones = intl.supportedValuesOf?.('timeZone') ?? []
+  const list = zones.includes(selected) ? zones : [selected, ...zones]
+  return [...new Set(list)].filter(Boolean).sort()
+}
+
 function ProfileForm({ chart }: { chart: ChartResponse }) {
   const { session, updateProfile } = useAuth()
   const navigate = useNavigate()
   const formRef = useUserInvalidSync<HTMLFormElement>()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const initialTimezone = session?.user.timezone ?? chart.timezone
+  const timezones = timezoneOptions(initialTimezone)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -31,13 +40,12 @@ function ProfileForm({ chart }: { chart: ChartResponse }) {
     }
     const data = new FormData(event.currentTarget)
     const nombre = String(data.get('nombre') ?? '').trim()
+    const timezone = String(data.get('timezone') ?? '').trim()
     setPending(true)
     setError(null)
     try {
-      if (nombre !== session.user.nombre) {
-        await updateProfile(nombre)
-      }
-      await saveChart(session.token, chartRequestFromFormData(data))
+      await updateProfile(nombre, timezone || undefined)
+      await saveChart(chartRequestFromFormData(data))
       navigate('/chart', { replace: true })
     } catch (cause) {
       setError(chartErrorMessage(cause))
@@ -84,6 +92,20 @@ function ProfileForm({ chart }: { chart: ChartResponse }) {
             />
             <p className="field__hint">El correo no se puede cambiar por ahora.</p>
           </div>
+
+          <div className="field">
+            <label htmlFor="profile-timezone">Zona horaria</label>
+            <select id="profile-timezone" name="timezone" defaultValue={initialTimezone}>
+              {timezones.map((timezone) => (
+                <option key={timezone} value={timezone}>
+                  {timezone}
+                </option>
+              ))}
+            </select>
+            <p className="field__hint">
+              Define a qué hora cambia tu lectura diaria, semanal y mensual.
+            </p>
+          </div>
         </div>
 
         <div className="form__section">
@@ -95,6 +117,9 @@ function ProfileForm({ chart }: { chart: ChartResponse }) {
               horaNac: chart.horaNac,
               timeKnown: chart.timeKnown,
               ciudad: chart.ciudad,
+              latitud: chart.latitud,
+              longitud: chart.longitud,
+              timezone: chart.timezone,
             }}
           />
         </div>

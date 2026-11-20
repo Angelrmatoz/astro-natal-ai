@@ -109,6 +109,15 @@ No poner lógica de negocio en controllers ni acceso a datos en services.
 - No commitear `.env`, `.infisical.yaml` ni secretos reales.
 - No agregar secretos a variables `VITE_*`; terminan en el bundle público.
 
+## Seguridad
+
+- Contraseñas con BCrypt; mínimo 12 caracteres y máximo 72 (límite de BCrypt).
+- El JWT viaja en cookie `HttpOnly` `AUTH_TOKEN`; nunca guardarlo en `localStorage` ni exponerlo en el SPA.
+- Toda mutación autenticada por cookie debe enviar `X-XSRF-TOKEN`; el backend valida contra la cookie `XSRF-TOKEN`.
+- `POST /api/auth/logout` revoca la fila de `auth_sessions`; no confiar solo en borrar la cookie.
+- Login limitado con `LoginRateLimiter` (5 intentos / 15 min por correo e IP).
+- En producción, cookies `Secure` y `SameSite=None`; el frontend y el backend están en dominios distintos.
+
 ## Tests y CI
 
 - Antes de cerrar un cambio de backend: `cd backend && .\mvnw.cmd test`.

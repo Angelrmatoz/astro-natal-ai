@@ -23,6 +23,7 @@ public class UserController {
     @PatchMapping("/me")
     public UserResponse update(@AuthenticationPrincipal Jwt jwt,
                                @Valid @RequestBody UpdateProfileRequest request) {
-        return userService.rename(UUID.fromString(jwt.getSubject()), request.nombre());
+        return userService.update(
+                UUID.fromString(jwt.getSubject()), request.nombre(), request.timezone());
     }
 }

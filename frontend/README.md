@@ -44,6 +44,14 @@ Vite solo expone variables con prefijo `VITE_`. No pongas secretos en variables 
 
 `.env` está ignorado por git; `.env.example` sí se versiona.
 
+## Sesión
+
+- El backend entrega el JWT en una cookie `HttpOnly`; el frontend nunca guarda el token.
+- `apiRequest` usa `credentials: 'include'` y añade `X-XSRF-TOKEN` en mutaciones leyendo la cookie `XSRF-TOKEN`.
+- Al montar, `AuthProvider` pide `/api/auth/csrf` y valida la sesión con `/api/auth/me`.
+- Logout llama a `POST /api/auth/logout`, que revoca la sesión en el servidor.
+- Contraseñas de mínimo 12 caracteres.
+
 ## Scripts
 
 ```powershell

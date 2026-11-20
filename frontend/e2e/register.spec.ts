@@ -11,6 +11,21 @@ test('creates the account and the chart in one flow', async ({ page }) => {
       body: JSON.stringify({ ...session, tokenType: 'Bearer' }),
     }),
   )
+  await page.route('**/api/auth/csrf', (route) => route.fulfill({ status: 204, body: '' }))
+  await page.route('**/api/geocoding/search**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          ciudad: 'Santo Domingo, Distrito Nacional, República Dominicana',
+          latitud: 18.47186,
+          longitud: -69.89232,
+          timezone: 'America/Santo_Domingo',
+        },
+      ]),
+    }),
+  )
   await page.route('**/api/charts', async (route) => {
     if (route.request().method() === 'POST') {
       chartPayload = route.request().postDataJSON()
@@ -34,11 +49,12 @@ test('creates the account and the chart in one flow', async ({ page }) => {
   await page.goto('/register')
   await page.getByLabel('Nombre').fill('Ana')
   await page.getByLabel('Correo').fill('ana@example.com')
-  await page.getByLabel('Contraseña').fill('secret123')
+  await page.getByLabel('Contraseña').fill('secret12345678')
   await page.getByLabel('Fecha de nacimiento').fill('1990-05-15')
   await page.getByLabel('No sé mi hora de nacimiento').check()
   await expect(page.getByLabel('Hora local')).toBeDisabled()
-  await page.getByLabel('Ciudad de nacimiento').fill('Santo Domingo')
+  await page.getByLabel('Ciudad de nacimiento').fill('Santo')
+  await page.getByRole('option', { name: /Santo Domingo/ }).click()
 
   await page.getByRole('button', { name: 'Crear cuenta y calcular mi carta' }).click()
 
@@ -48,6 +64,8 @@ test('creates the account and the chart in one flow', async ({ page }) => {
     fechaNac: '1990-05-15',
     horaNac: null,
     timeKnown: false,
-    ciudad: 'Santo Domingo',
+    latitud: 18.47186,
+    longitud: -69.89232,
+    timezone: 'America/Santo_Domingo',
   })
 })

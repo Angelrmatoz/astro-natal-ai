@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { saveChart } from '../api/astro'
-import type { AuthResponse } from '../api/types'
 import { useAuth } from '../auth/useAuth'
 import { AuthShell } from '../components/AuthShell'
 import { BirthDataFields } from '../components/BirthDataFields'
@@ -35,9 +34,8 @@ export function RegisterPage() {
     setError(null)
     setPending(true)
 
-    let auth: AuthResponse
     try {
-      auth = await register(
+      await register(
         String(data.get('nombre') ?? ''),
         String(data.get('email') ?? ''),
         String(data.get('password') ?? ''),
@@ -50,7 +48,7 @@ export function RegisterPage() {
 
     setCreated(true)
     try {
-      await saveChart(auth.token, chartRequest)
+      await saveChart(chartRequest)
       navigate('/chart', { replace: true })
     } catch (cause) {
       navigate('/onboarding', {
@@ -111,9 +109,9 @@ export function RegisterPage() {
           name="password"
           label="Contraseña"
           autoComplete="new-password"
-          hint="Mínimo 8 caracteres."
-          minLength={8}
-          error="La contraseña necesita al menos 8 caracteres."
+          hint="Mínimo 12 caracteres."
+          minLength={12}
+          error="La contraseña necesita al menos 12 caracteres."
         />
 
         <div className="form__section">
